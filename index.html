@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASHA EHR - Healthcare Companion</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c7fb8;
+            --primary-dark: #1d5f8a;
+            --primary-light: #5ca3d6;
+            --secondary: #31a354;
+            --secondary-dark: #238443;
+            --accent: #e6550d;
+            --success: #31a354;
+            --warning: #fd8d3c;
+            --danger: #e31a1c;
+            --light: #f7fbff;
+            --dark: #253238;
+            --gray: #6c7a89;
+            --gray-light: #e1e8ed;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --body-bg: #f0f4f8;
+            --container-bg: white;
+            --text-color: var(--dark);
+            --border-color: #e5e7eb;
+        }
+
+        /* ----- DARK MODE STYLES ----- */
+        .dark-mode {
+            --primary: #5ca3d6;
+            --primary-dark: #2c7fb8;
+            --light: #2c3a47; 
+            --dark: #f0f4f8; 
+            --gray: #9ca3af;
+            --gray-light: #4a5568; 
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --body-bg: #1a202c;
+            --container-bg: #2d3748;
+            --text-color: #f0f4f8;
+            --border-color: #4a5568;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--body-bg);
+            overflow-x: hidden;
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: var(--container-bg);
+            min-height: 100vh;
+            box-shadow: 0 0 30px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; }
+        .logo-icon { font-size: 28px; }
+        .menu-btn { background: rgba(255,255,255,0.2); border: none; color: white; width: 40px; height: 40px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: var(--transition); }
+        .menu-btn:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+        .header-title { font-size: 22px; font-weight: 600; }
+        .header-right { display: flex; gap: 12px; align-items: center; }
+        .status-badge { display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); padding: 6px 12px; border-radius: 20px; font-size: 13px; transition: var(--transition); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+        .status-dot.offline { background: var(--danger); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .sync-badge { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 20px; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: var(--transition); }
+        .sync-badge:hover { background: rgba(255,255,255,0.3); transform: scale(1.05); }
+
+        /* Main Layout */
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 240px; background: var(--container-bg); border-right: 1px solid var(--border-color); padding: 20px 0; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.05); }
+        .nav-section { margin-bottom: 24px; }
+        .nav-title { font-size: 13px; font-weight: 600; color: var(--gray); text-transform: uppercase; padding: 0 20px 8px; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+        .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 20px; cursor: pointer; transition: var(--transition); color: var(--text-color); text-decoration: none; border-left: 3px solid transparent; }
+        .nav-item:hover { background: var(--light); color: var(--primary); }
+        .nav-item.active { background: var(--light); color: var(--primary); border-left-color: var(--primary); }
+        .nav-icon { font-size: 18px; width: 24px; text-align: center; }
+        .nav-label { font-size: 15px; font-weight: 500; }
+
+        /* Main Content */
+        .main-content { flex: 1; overflow-y: auto; padding: 24px; }
+
+        /* Summary Cards */
+        .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .summary-card { background: white; border-radius: 12px; padding: 20px; color: white; box-shadow: var(--card-shadow); transition: var(--transition); cursor: pointer; position: relative; overflow: hidden; border-top: 4px solid transparent; }
+        .summary-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); }
+        .dark-mode .summary-card:hover { box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .summary-card.orange { background: linear-gradient(135deg, var(--warning), #e6550d); border-top-color: var(--warning); }
+        .summary-card.green { background: linear-gradient(135deg, var(--success), var(--secondary-dark)); border-top-color: var(--success); }
+        .summary-card.red { background: linear-gradient(135deg, var(--danger), #bd0026); border-top-color: var(--danger); }
+        .summary-card.blue { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-top-color: var(--primary); }
+        .summary-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .summary-card-icon { font-size: 24px; opacity: 0.9; }
+        .summary-card-value { font-size: 32px; font-weight: 700; }
+        .summary-card-label { font-size: 14px; opacity: 0.9; }
+
+        /* Section Header */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .section-title { font-size: 20px; font-weight: 600; color: var(--text-color); }
+        .view-all-btn { color: var(--primary); font-size: 14px; text-decoration: none; display: flex; align-items: center; gap: 4px; transition: var(--transition); font-weight: 500; }
+        .view-all-btn:hover { color: var(--primary-dark); }
+        
+        /* Task Cards */
+        .task-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .task-card { background: var(--container-bg); border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow); border-left: 4px solid var(--primary); transition: var(--transition); cursor: pointer; }
+        .task-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        .dark-mode .task-card:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
+        .task-card.overdue { border-left-color: var(--danger); background: #fef2f2; }
+        .dark-mode .task-card.overdue { background: #452323; }
+        .task-card.completed { border-left-color: var(--success); background: #f0fdf4; opacity: 0.8; }
+        .dark-mode .task-card.completed { background: #1c3d2a; }
+        .task-card-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+        .task-type { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--text-color); }
+        .task-badge { font-size: 20px; }
+        .task-status { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+        .task-status.pending { background: #fef3c7; color: #92400e; }
+        .dark-mode .task-status.pending { background: #42300f; color: #fef3c7; }
+        .task-status.overdue { background: #fee2e2; color: #991b1b; }
+        .dark-mode .task-status.overdue { background: #452323; color: #fee2e2; }
+        .task-status.completed { background: #dcfce7; color: #166534; }
+        .dark-mode .task-status.completed { background: #1c3d2a; color: #dcfce7; }
+        .task-patient { font-size: 16px; color: var(--gray); margin-bottom: 6px; }
+        .task-details { display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: var(--gray); margin-bottom: 12px; }
+        .task-actions { display: flex; gap: 8px; margin-top: 12px; }
+        
+        .btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: var(--transition); }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-2px); }
+        .btn-secondary { background: #e5e7eb; color: #253238; }
+        .dark-mode .btn-secondary { background: #4a5568; color: #f0f4f8; }
+        .btn-secondary:hover { background: #d1d5db; transform: translateY(-2px); }
+        .dark-mode .btn-secondary:hover { background: #5a6578; }
+
+        /* Quick Actions */
+        .quick-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .quick-action { background: var(--container-bg); border-radius: 12px; padding: 24px 20px; text-align: center; box-shadow: var(--card-shadow); cursor: pointer; transition: var(--transition); border: 2px solid transparent; }
+        .quick-action:hover { border-color: var(--primary); transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .dark-mode .quick-action:hover { box-shadow: 0 8px 20px rgba(0,0,0,0.5); }
+        .quick-action-icon { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; font-size: 24px; color: white; transition: var(--transition); }
+        .quick-action:hover .quick-action-icon { transform: scale(1.1); }
+        .quick-action-label { font-size: 15px; font-weight: 600; color: var(--text-color); }
+
+        /* Patient List & Search */
+        .search-bar { position: relative; margin-bottom: 20px; }
+        .search-input { width: 100%; padding: 12px 16px 12px 45px; border-radius: 12px; border: 2px solid var(--border-color); font-size: 15px; outline: none; transition: var(--transition); background: var(--body-bg); color: var(--text-color); }
+        .search-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(44, 127, 184, 0.1); }
+        .search-icon { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .patient-list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .patient-card { background: var(--container-bg); border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow); display: flex; align-items: center; gap: 16px; cursor: pointer; transition: var(--transition); }
+        .patient-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.1); }
+        .dark-mode .patient-card:hover { box-shadow: 0 6px 15px rgba(0,0,0,0.4); }
+        .patient-avatar { width: 60px; height: 60px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; color: white; }
+        .patient-info { flex: 1; }
+        .patient-name { font-size: 16px; font-weight: 600; color: var(--text-color); margin-bottom: 4px; }
+        .patient-details { font-size: 14px; color: var(--gray); }
+        .patient-programs { display: flex; gap: 4px; margin-top: 8px; }
+        .program-tag { background: #e1f5fe; color: var(--primary-dark); padding: 3px 8px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+        .dark-mode .program-tag { background: #1d3c4e; color: #a2d2f7; }
+        .patient-chevron { color: #9ca3af; font-size: 18px; transition: var(--transition); }
+        .patient-card:hover .patient-chevron { color: var(--primary); transform: translateX(3px); }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal.show { display: flex; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-content { background: var(--container-bg); border-radius: 16px; max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: slideUp 0.3s ease; }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-title { font-size: 20px; font-weight: 600; color: var(--text-color); }
+        .close-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray); transition: var(--transition); }
+        .close-btn:hover { color: var(--text-color); transform: rotate(90deg); }
+        
+        /* Forms */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; color: #afb8c5; margin-bottom: 6px; }
+        .dark-mode .form-label { color: var(--gray); }
+        .form-input, .form-select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 2px solid var(--border-color); font-size: 15px; outline: none; transition: var(--transition); background: var(--body-bg); color: var(--text-color); }
+        .form-input:focus, .form-select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(44, 127, 184, 0.1); }
+        .input-with-icon { position: relative; }
+        .input-with-icon .form-input { padding-right: 40px; }
+        .input-voice-btn { position: absolute; right: 1px; top: 1px; bottom: 1px; width: 38px; background: none; border: none; color: var(--gray); cursor: pointer; font-size: 16px; transition: var(--transition); }
+        .input-voice-btn:hover { color: var(--primary); }
+        .form-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .btn-block { flex: 1; justify-content: center; }
+
+        .hidden { display: none; }
+        .language-selector { background: rgba(255,255,255,0.2); border: none; color: white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: var(--transition); }
+        .language-selector:hover { background: rgba(255,255,255,0.3); }
+        .language-selector option { color: #253238; }
+
+        /* Progress Bars */
+        .progress-container { margin-bottom: 12px; }
+        .progress-label { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 14px; color: var(--gray); }
+        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+        .dark-mode .progress-bar { background: #4a5568; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+        
+        /* Toast Notification */
+        .toast { position: fixed; bottom: 30px; right: 30px; background: #253238; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 1001; display: flex; align-items: center; gap: 10px; max-width: 350px; opacity: 0; transition: opacity 0.3s ease; }
+        .dark-mode .toast { background: #f0f4f8; color: #253238; }
+        .toast.show { opacity: 1; }
+        .toast.success { background-color: var(--success); color: white; }
+        .toast.error { background-color: var(--danger); color: white; }
+        .toast.warning { background-color: var(--warning); color: #253238; }
+        
+        /* Voice Recording Animation */
+        .voice-recording { position: fixed; bottom: 100px; right: 30px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(44, 127, 184, 0.4); z-index: 1002; animation: pulse 1.5s infinite; }
+        .voice-animation { display: flex; gap: 3px; align-items: center; }
+        .voice-bar { width: 3px; height: 10px; background: white; border-radius: 2px; animation: voicePulse 1.2s infinite ease-in-out; }
+        .voice-bar:nth-child(2) { animation-delay: 0.1s; }
+        .voice-bar:nth-child(3) { animation-delay: 0.2s; }
+        .voice-bar:nth-child(4) { animation-delay: 0.3s; }
+        .voice-bar:nth-child(5) { animation-delay: 0.4s; }
+        @keyframes voicePulse { 0%, 100% { height: 10px; } 50% { height: 20px; } }
+
+        /* ----- DARK MODE TOGGLE SWITCH ----- */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:focus + .slider { box-shadow: 0 0 1px var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
+        .slider.round { border-radius: 34px; }
+        .slider.round:before { border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="menu-btn" onclick="toggleMenu()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo">
+                    <i class="fas fa-heartbeat logo-icon"></i>
+                    <span>ASHA EHR</span>
+                </div>
+                <div class="header-title" id="headerTitle">Dashboard</div>
+            </div>
+            <div class="header-right">
+                <select class="language-selector" onchange="changeLanguage(this.value)">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="ta">தமிழ்</option>
+                    <option value="te">తెలుగు</option>
+                </select>
+                <div class="status-badge">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Online</span>
+                </div>
+                <div class="sync-badge" onclick="syncData()">
+                    <i class="fas fa-sync-alt"></i>
+                    <span id="syncCount">12</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <div class="sidebar">
+                <div class="nav-section">
+                    <div class="nav-title">Main</div>
+                    <a href="#" class="nav-item active" onclick="showScreen('dashboardScreen')">
+                        <i class="fas fa-home nav-icon"></i>
+                        <span class="nav-label">Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showScreen('patientsScreen')">
+                        <i class="fas fa-users nav-icon"></i>
+                        <span class="nav-label">Patients</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showScreen('tasksScreen')">
+                        <i class="fas fa-calendar-check nav-icon"></i>
+                        <span class="nav-label">Tasks</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="showScreen('reportsScreen')">
+                        <i class="fas fa-chart-bar nav-icon"></i>
+                        <span class="nav-label">Reports</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-title">Tools</div>
+                    <a href="#" class="nav-item" onclick="openModal('addPatientModal')">
+                        <i class="fas fa-user-plus nav-icon"></i>
+                        <span class="nav-label">Add Patient</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="openModal('recordVisitModal')">
+                        <i class="fas fa-notes-medical nav-icon"></i>
+                        <span class="nav-label">Record Visit</span>
+                    </a>
+                    <a href="#" class="nav-item" onclick="syncData()">
+                        <i class="fas fa-sync nav-icon"></i>
+                        <span class="nav-label">Sync Data</span>
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-title">Settings</div>
+                    <a href="#" class="nav-item" onclick="showScreen('settingsScreen')">
+                        <i class="fas fa-cog nav-icon"></i>
+                        <span class="nav-label">Settings</span>
+                    </a>
+                    <a href="#" class="nav-item">
+                        <i class="fas fa-question-circle nav-icon"></i>
+                        <span class="nav-label">Help & Support</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div id="dashboardScreen">
+                    <div class="summary-grid">
+                        <div class="summary-card orange" onclick="showScreen('tasksScreen')">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-clock"></i></div>
+                                <div class="summary-card-value">8</div>
+                            </div>
+                            <div class="summary-card-label">Pending Tasks</div>
+                        </div>
+                        <div class="summary-card green" onclick="showScreen('tasksScreen')">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="summary-card-value">5</div>
+                            </div>
+                            <div class="summary-card-label">Completed Today</div>
+                        </div>
+                        <div class="summary-card red" onclick="showScreen('tasksScreen')">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-exclamation-circle"></i></div>
+                                <div class="summary-card-value">3</div>
+                            </div>
+                            <div class="summary-card-label">Overdue Items</div>
+                        </div>
+                        <div class="summary-card blue" onclick="showScreen('patientsScreen')">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-users"></i></div>
+                                <div class="summary-card-value">124</div>
+                            </div>
+                            <div class="summary-card-label">Total Patients</div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Quick Actions</div>
+                    </div>
+                    <div class="quick-actions">
+                        <div class="quick-action" onclick="openModal('addPatientModal')">
+                            <div class="quick-action-icon"><i class="fas fa-user-plus"></i></div>
+                            <div class="quick-action-label">Add Patient</div>
+                        </div>
+                        <div class="quick-action" onclick="openModal('recordVisitModal')">
+                            <div class="quick-action-icon"><i class="fas fa-notes-medical"></i></div>
+                            <div class="quick-action-label">Record Visit</div>
+                        </div>
+                        <div class="quick-action" onclick="showScreen('tasksScreen')">
+                            <div class="quick-action-icon"><i class="fas fa-calendar-check"></i></div>
+                            <div class="quick-action-label">View Schedule</div>
+                        </div>
+                        <div class="quick-action" onclick="syncData()">
+                            <div class="quick-action-icon"><i class="fas fa-sync"></i></div>
+                            <div class="quick-action-label">Sync Now</div>
+                        </div>
+                    </div>
+
+                    <div class="section-header">
+                        <div class="section-title">Today's Tasks</div>
+                        <a href="#" class="view-all-btn" onclick="showScreen('tasksScreen')">
+                            View All <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </div>
+                    <div class="task-list">
+                        <div class="task-card" onclick="openModal('recordVisitModal')">
+                            <div class="task-card-header">
+                                <div class="task-type">
+                                    <span class="task-badge">🤰</span>
+                                    <span>ANC Checkup</span>
+                                </div>
+                                <span class="task-status pending">Pending</span>
+                            </div>
+                            <div class="task-patient">Lakshmi Devi</div>
+                            <div class="task-details">
+                                <span><i class="fas fa-map-marker-alt"></i> Rampur</span>
+                                <span><i class="fas fa-clock"></i> Due Today</span>
+                            </div>
+                             <div class="task-actions">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); callPatient('Lakshmi Devi')">
+                                    <i class="fas fa-phone"></i> Call
+                                </button>
+                                <button class="btn btn-primary" onclick="event.stopPropagation(); openModal('recordVisitModal')">
+                                    <i class="fas fa-edit"></i> Record
+                                </button>
+                            </div>
+                        </div>
+                        <div class="task-card overdue" onclick="openModal('recordVisitModal')">
+                            <div class="task-card-header">
+                                <div class="task-type">
+                                    <span class="task-badge">👶</span>
+                                    <span>PNC Visit</span>
+                                </div>
+                                <span class="task-status overdue">Overdue</span>
+                            </div>
+                            <div class="task-patient">Meera Kumari</div>
+                            <div class="task-details">
+                                <span><i class="fas fa-map-marker-alt"></i> Kishanpur</span>
+                                <span><i class="fas fa-clock"></i> Overdue 2 days</span>
+                            </div>
+                            <div class="task-actions">
+                                <button class="btn btn-secondary" onclick="event.stopPropagation(); callPatient('Meera Kumari')">
+                                    <i class="fas fa-phone"></i> Call
+                                </button>
+                                <button class="btn btn-primary" onclick="event.stopPropagation(); openModal('recordVisitModal')">
+                                    <i class="fas fa-edit"></i> Record
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="patientsScreen" class="hidden">
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Search patients..." id="searchInput">
+                    </div>
+                    <div class="patient-list" id="patientList">
+                        </div>
+                </div>
+
+                <div id="tasksScreen" class="hidden">
+                    <div class="task-list" id="taskList">
+                        </div>
+                </div>
+
+                <div id="reportsScreen" class="hidden">
+                    <div class="summary-grid">
+                        <div class="summary-card blue">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-baby"></i></div>
+                                <div class="summary-card-value">45</div>
+                            </div>
+                            <div class="summary-card-label">ANC Registered</div>
+                        </div>
+                        <div class="summary-card green">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-syringe"></i></div>
+                                <div class="summary-card-value">89%</div>
+                            </div>
+                            <div class="summary-card-label">Vaccination Coverage</div>
+                        </div>
+                        <div class="summary-card orange">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-heart"></i></div>
+                                <div class="summary-card-value">32</div>
+                            </div>
+                            <div class="summary-card-label">Child Health Visits</div>
+                        </div>
+                        <div class="summary-card red">
+                            <div class="summary-card-header">
+                                <div class="summary-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="summary-card-value">5</div>
+                            </div>
+                            <div class="summary-card-label">High Risk Cases</div>
+                        </div>
+                    </div>
+
+                    <div style="background: var(--container-bg); border-radius: 12px; padding: 20px; margin-top: 20px; box-shadow: var(--card-shadow);">
+                        <h3 style="margin-bottom: 16px; color: var(--text-color);">Monthly Performance</h3>
+                        <div class="progress-container">
+                            <div class="progress-label"><span>ANC Visits</span><span>85/100</span></div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: 85%; background: linear-gradient(90deg, var(--primary), var(--primary-dark));"></div></div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-label"><span>Vaccinations</span><span>92/100</span></div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: 92%; background: linear-gradient(90deg, var(--success), var(--secondary-dark));"></div></div>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-label"><span>Data Entry</span><span>78/100</span></div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: 78%; background: linear-gradient(90deg, var(--warning), var(--accent));"></div></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 20px; padding: 14px; font-size: 15px;">
+                        <i class="fas fa-download"></i> Download Report
+                    </button>
+                </div>
+                
+                <div id="settingsScreen" class="hidden">
+                     <div style="background: var(--container-bg); border-radius: 12px; overflow: hidden; box-shadow: var(--card-shadow);">
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-user" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">Profile</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+                        </div>
+                         
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-moon" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">Dark Mode</span>
+                            </div>
+                            <label class="switch">
+                                <input type="checkbox" id="darkModeToggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-language" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">Language</span>
+                            </div>
+                            <span style="color: var(--gray); font-size: 14px;">English</span>
+                        </div>
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-bell" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">Notifications</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+                        </div>
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer;" onclick="syncData()">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-sync" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">Sync Settings</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+                        </div>
+                        <div style="padding: 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-info-circle" style="font-size: 20px; color: var(--primary);"></i>
+                                <span style="font-weight: 600; color: var(--text-color);">About</span>
+                            </div>
+                            <span style="color: var(--gray); font-size: 14px;">v1.0.0</span>
+                        </div>
+                        <div style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <i class="fas fa-sign-out-alt" style="font-size: 20px; color: var(--danger);"></i>
+                                <span style="font-weight: 600; color: var(--danger);">Logout</span>
+                            </div>
+                            <i class="fas fa-chevron-right" style="color: #9ca3af;"></i>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; background: var(--container-bg); border-radius: 12px; padding: 20px; box-shadow: var(--card-shadow);">
+                        <h3 style="margin-bottom: 12px; color: var(--text-color);">Storage Usage</h3>
+                        <div class="progress-container">
+                            <div class="progress-label"><span>Local Storage</span><span>245 MB / 500 MB</span></div>
+                            <div class="progress-bar"><div class="progress-fill" style="width: 49%; background: linear-gradient(90deg, var(--primary), var(--primary-dark));"></div></div>
+                        </div>
+                        <button class="btn btn-secondary" style="width: 100%; margin-top: 12px; justify-content: center;">
+                            <i class="fas fa-trash"></i> Clear Cache
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="voice-recording hidden" id="voiceRecording">
+        <i class="fas fa-microphone"></i>
+        <span>Listening...</span>
+        <div class="voice-animation">
+            <div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div id="addPatientModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add New Patient</h2>
+                <button class="close-btn" onclick="closeModal('addPatientModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="addPatientForm">
+                <div class="form-group">
+                    <label class="form-label">Full Name *</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="patientNameInput" class="form-input" placeholder="Enter patient name" required>
+                        <button type="button" class="input-voice-btn" onclick="startVoiceInput('patientNameInput')"><i class="fas fa-microphone"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Age *</label>
+                     <div class="input-with-icon">
+                        <input type="number" id="patientAgeInput" class="form-input" placeholder="Enter age" required>
+                        <button type="button" class="input-voice-btn" onclick="startVoiceInput('patientAgeInput')"><i class="fas fa-microphone"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Gender *</label>
+                    <select id="patientGenderInput" class="form-select" required><option value="">Select gender</option><option value="Female">Female</option><option value="Male">Male</option><option value="Other">Other</option></select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contact Number *</label>
+                    <div class="input-with-icon">
+                        <input type="tel" id="patientPhoneInput" class="form-input" placeholder="Enter phone number" required>
+                        <button type="button" class="input-voice-btn" onclick="startVoiceInput('patientPhoneInput')"><i class="fas fa-microphone"></i></button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Village *</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="patientVillageInput" class="form-input" placeholder="Enter village name" required>
+                        <button type="button" class="input-voice-btn" onclick="startVoiceInput('patientVillageInput')"><i class="fas fa-microphone"></i></button>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">Health Program</label><select id="patientProgramInput" class="form-select"><option value="">Select program</option><option value="ANC">Antenatal Care (ANC)</option><option value="PNC">Postnatal Care (PNC)</option><option value="Child Health">Child Health</option><option value="Immunization">Immunization</option><option value="Family Planning">Family Planning</option></select></div>
+                <div class="form-group"><label class="form-label">Photo</label><button type="button" class="btn btn-secondary btn-block"><i class="fas fa-camera"></i> Capture Photo</button></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary btn-block" onclick="closeModal('addPatientModal')">Cancel</button><button type="submit" class="btn btn-primary btn-block"><i class="fas fa-save"></i> Save</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="recordVisitModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Record Visit</h2>
+                <button class="close-btn" onclick="closeModal('recordVisitModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="recordVisitForm">
+                <div class="form-group"><label class="form-label">Select Patient *</label><select class="form-select" required><option value="">Choose patient</option><option value="1">Lakshmi Devi</option><option value="2">Sunita Singh</option><option value="3">Meera Kumari</option><option value="4">Radha Devi</option></select></div>
+                <div class="form-group"><label class="form-label">Visit Type *</label><select class="form-select" required><option value="">Select visit type</option><option value="anc">ANC Checkup</option><option value="pnc">PNC Visit</option><option value="vaccine">Vaccination</option><option value="child">Child Health</option><option value="general">General Visit</option></select></div>
+                <div class="form-group"><label class="form-label">Visit Date *</label><input type="date" class="form-input" required></div>
+                <div class="form-group"><label class="form-label">Observations</label><textarea class="form-input" rows="4" placeholder="Enter visit notes..."></textarea></div>
+                <div class="form-group"><label class="form-label">Next Visit Date</label><input type="date" class="form-input"></div>
+                <div class="form-actions"><button type="button" class="btn btn-secondary btn-block" onclick="closeModal('recordVisitModal')">Cancel</button><button type="submit" class="btn btn-primary btn-block"><i class="fas fa-save"></i> Save Visit</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="patientDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Patient Details</h2>
+                <button class="close-btn" onclick="closeModal('patientDetailsModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="patientDetailsBody" style="padding-top: 10px;">
+                </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Sample data
+        let patients = [
+            { id: 1, name: "Lakshmi Devi", age: 26, gender: "Female", phone: "9876543210", village: "Rampur", programs: ["ANC"] },
+            { id: 2, name: "Sunita Singh", age: 28, gender: "Female", phone: "9876543211", village: "Rampur", programs: ["Child Health"] },
+            { id: 3, name: "Meera Kumari", age: 24, gender: "Female", phone: "9876543212", village: "Kishanpur", programs: ["PNC"] },
+            { id: 4, name: "Radha Devi", age: 32, gender: "Female", phone: "9876543213", village: "Rampur", programs: ["Family Planning"] }
+        ];
+
+        const tasks = [
+            { id: 1, type: "ANC Checkup", patient: "Lakshmi Devi", village: "Rampur", due: "Today", status: "pending", badge: "🤰" },
+            { id: 2, type: "PNC Visit", patient: "Meera Kumari", village: "Kishanpur", due: "Overdue 2 days", status: "overdue", badge: "👶" },
+            { id: 3, type: "Vaccination", patient: "Baby of Radha", village: "Rampur", due: "Tomorrow", status: "pending", badge: "💉" },
+            { id: 4, type: "Child Health", patient: "Baby of Sunita", village: "Rampur", due: "Today", status: "pending", badge: "👶" }
+        ];
+
+        let currentScreen = 'dashboardScreen';
+        let isOnline = true;
+        let syncCount = 12;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            populatePatientList();
+            populateTaskList();
+            updateConnectivityStatus();
+            document.getElementById('addPatientForm').addEventListener('submit', savePatient);
+            document.getElementById('recordVisitForm').addEventListener('submit', saveVisit);
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+
+            // ----- DARK MODE LOGIC -----
+            const darkModeToggle = document.getElementById('darkModeToggle');
+            
+            // Check for saved theme in localStorage
+            if (localStorage.getItem('theme') === 'dark') {
+                document.body.classList.add('dark-mode');
+                darkModeToggle.checked = true;
+            }
+
+            // Add event listener to toggle
+            darkModeToggle.addEventListener('change', () => {
+                document.body.classList.toggle('dark-mode');
+                let theme = 'light';
+                if (document.body.classList.contains('dark-mode')) {
+                    theme = 'dark';
+                }
+                localStorage.setItem('theme', theme);
+            });
+        });
+
+        function updateConnectivityStatus() {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            if (isOnline) {
+                statusDot.classList.remove('offline');
+                statusText.textContent = 'Online';
+            } else {
+                statusDot.classList.add('offline');
+                statusText.textContent = 'Offline';
+            }
+        }
+
+        function showScreen(screenId) {
+            const screens = ['dashboardScreen', 'patientsScreen', 'tasksScreen', 'reportsScreen', 'settingsScreen'];
+            screens.forEach(screen => {
+                const el = document.getElementById(screen);
+                if(el) el.classList.add('hidden');
+            });
+
+            const targetScreen = document.getElementById(screenId);
+            if(targetScreen) targetScreen.classList.remove('hidden');
+            currentScreen = screenId;
+
+            document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            const activeNavItem = document.querySelector(`.sidebar .nav-item[onclick="showScreen('${screenId}')"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+
+            const titles = {
+                'dashboardScreen': 'Dashboard', 'patientsScreen': 'Patients',
+                'tasksScreen': 'Tasks', 'reportsScreen': 'Reports', 'settingsScreen': 'Settings'
+            };
+            document.getElementById('headerTitle').textContent = titles[screenId] || 'Dashboard';
+        }
+
+        function populatePatientList() {
+            const patientList = document.getElementById('patientList');
+            if(!patientList) return;
+            patientList.innerHTML = '';
+            patients.forEach(patient => {
+                const patientCard = document.createElement('div');
+                patientCard.className = 'patient-card';
+                patientCard.onclick = () => viewPatientDetails(patient.id);
+                patientCard.innerHTML = `
+                    <div class="patient-avatar">${patient.gender === 'Female' ? '👩' : (patient.gender === 'Male' ? '👨' : '👤')}</div>
+                    <div class="patient-info">
+                        <div class="patient-name">${patient.name}</div>
+                        <div class="patient-details">${patient.age} years • ${patient.gender}</div>
+                        <div class="patient-programs">${patient.programs.map(p => `<span class="program-tag">${p}</span>`).join('')}</div>
+                    </div>
+                    <i class="fas fa-chevron-right patient-chevron"></i>`;
+                patientList.appendChild(patientCard);
+            });
+        }
+
+        function populateTaskList() {
+            const taskList = document.getElementById('taskList');
+            if(!taskList) return;
+            taskList.innerHTML = '';
+            tasks.forEach(task => {
+                const taskCard = document.createElement('div');
+                taskCard.className = `task-card ${task.status === 'overdue' ? 'overdue' : ''}`;
+                taskCard.onclick = () => openModal('recordVisitModal');
+                taskCard.innerHTML = `
+                    <div class="task-card-header">
+                        <div class="task-type"><span class="task-badge">${task.badge}</span><span>${task.type}</span></div>
+                        <span class="task-status ${task.status}">${task.status}</span>
+                    </div>
+                    <div class="task-patient">${task.patient}</div>
+                    <div class="task-details">
+                        <span><i class="fas fa-map-marker-alt"></i> ${task.village}</span>
+                        <span><i class="fas fa-clock"></i> ${task.due}</span>
+                    </div>
+                    <div class="task-actions">
+                         <button class="btn btn-secondary" onclick="event.stopPropagation(); callPatient('${task.patient}')"><i class="fas fa-phone"></i> Call</button>
+                         <button class="btn btn-primary" onclick="event.stopPropagation(); openModal('recordVisitModal')"><i class="fas fa-edit"></i> Record</button>
+                    </div>`;
+                taskList.appendChild(taskCard);
+            });
+        }
+
+        function openModal(modalId) { document.getElementById(modalId).classList.add('show'); }
+        function closeModal(modalId) { document.getElementById(modalId).classList.remove('show'); }
+
+        function savePatient(event) {
+            event.preventDefault();
+            const form = document.getElementById('addPatientForm');
+            const name = document.getElementById('patientNameInput').value.trim();
+            const age = document.getElementById('patientAgeInput').value;
+            const gender = document.getElementById('patientGenderInput').value;
+            const phone = document.getElementById('patientPhoneInput').value.trim();
+            const village = document.getElementById('patientVillageInput').value.trim();
+            const program = document.getElementById('patientProgramInput').value;
+
+            if (!name || !age || !gender || !phone || !village) {
+                showToast('Please fill all required fields.', 'error');
+                return;
+            }
+
+            const newPatient = {
+                id: patients.length > 0 ? Math.max(...patients.map(p => p.id)) + 1 : 1,
+                name: name,
+                age: parseInt(age),
+                gender: gender,
+                phone: phone,
+                village: village,
+                programs: program ? [program] : []
+            };
+
+            patients.push(newPatient);
+            populatePatientList();
+            showToast('Patient saved successfully! (Stored offline)', 'success');
+            syncCount++;
+            document.getElementById('syncCount').textContent = syncCount;
+            form.reset();
+            closeModal('addPatientModal');
+        }
+
+        function saveVisit(event) {
+            event.preventDefault();
+            showToast('Visit recorded successfully! (Stored offline)', 'success');
+            closeModal('recordVisitModal');
+            syncCount++;
+            document.getElementById('syncCount').textContent = syncCount;
+        }
+
+        function syncData() {
+            if (!isOnline) {
+                showToast('Cannot sync - Device is offline.', 'warning');
+                return;
+            }
+            showToast(`Syncing ${syncCount} records...`, 'warning');
+            setTimeout(() => {
+                syncCount = 0;
+                document.getElementById('syncCount').textContent = syncCount;
+                showToast('Sync completed successfully!', 'success');
+            }, 2000);
+        }
+
+        function viewPatientDetails(patientId) {
+            const patient = patients.find(p => p.id === patientId);
+            if (!patient) {
+                showToast('Patient not found.', 'error');
+                return;
+            }
+
+            const detailsBody = document.getElementById('patientDetailsBody');
+            detailsBody.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                    <div class="patient-avatar" style="width: 80px; height: 80px; font-size: 36px; border-radius: 16px;">
+                        ${patient.gender === 'Female' ? '👩' : (patient.gender === 'Male' ? '👨' : '👤')}
+                    </div>
+                    <div>
+                        <h3 style="font-size: 22px; color: var(--text-color); margin-bottom: 5px;">${patient.name}</h3>
+                        <p style="color: var(--gray);">${patient.age} years • ${patient.gender}</p>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border-color); padding-top: 15px; font-size: 15px;">
+                    <p style="margin-bottom: 12px;">
+                        <strong style="display: inline-block; width: 100px;"><i class="fas fa-phone" style="color: var(--primary); width: 20px; margin-right: 5px;"></i> Contact</strong> 
+                        <span>${patient.phone}</span>
+                    </p>
+                    <p style="margin-bottom: 12px;">
+                        <strong style="display: inline-block; width: 100px;"><i class="fas fa-map-marker-alt" style="color: var(--primary); width: 20px; margin-right: 5px;"></i> Village</strong> 
+                        <span>${patient.village}</span>
+                    </p>
+                    <div style="display: flex; align-items: start;">
+                        <strong style="display: inline-block; width: 100px; margin-top: 5px;"><i class="fas fa-heartbeat" style="color: var(--primary); width: 20px; margin-right: 5px;"></i> Programs</strong>
+                        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            ${patient.programs.length > 0 ? patient.programs.map(p => `<span class="program-tag">${p}</span>`).join('') : '<span style="color: var(--gray);">No programs assigned.</span>'}
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions" style="margin-top: 24px;">
+                    <button class="btn btn-secondary btn-block" onclick="callPatient('${patient.name}')"><i class="fas fa-phone"></i> Call Patient</button>
+                    <button class="btn btn-primary btn-block" onclick="openModal('recordVisitModal')"><i class="fas fa-notes-medical"></i> Record New Visit</button>
+                </div>
+            `;
+
+            openModal('patientDetailsModal');
+        }
+
+        function callPatient(patientName) { showToast(`Calling ${patientName}...`, 'success'); }
+        function toggleMenu() { showToast('Menu toggled.', 'success'); }
+        function changeLanguage(lang) { showToast(`Language changed to: ${lang}`, 'success'); }
+
+        function handleSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.patient-card').forEach(card => {
+                const name = card.querySelector('.patient-name').textContent.toLowerCase();
+                card.style.display = name.includes(searchTerm) ? 'flex' : 'none';
+            });
+        }
+
+        function startVoiceInput(targetInputId) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                showToast('Sorry, your browser does not support voice recognition.', 'error');
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            const voiceRecording = document.getElementById('voiceRecording');
+            const inputElement = document.getElementById(targetInputId);
+
+            recognition.lang = 'en-IN';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => { voiceRecording.classList.remove('hidden'); };
+            recognition.onspeechend = () => { recognition.stop(); voiceRecording.classList.add('hidden'); };
+            recognition.onend = () => { voiceRecording.classList.add('hidden'); };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                inputElement.value = transcript;
+                showToast('Voice input captured!', 'success');
+            };
+
+            recognition.onerror = (event) => {
+                let errorMessage = 'An error occurred during recognition.';
+                if (event.error === 'no-speech') errorMessage = 'No speech was detected. Please try again.';
+                else if (event.error === 'audio-capture') errorMessage = 'Microphone not found or is not working.';
+                else if (event.error === 'not-allowed') errorMessage = 'Permission to use microphone was denied.';
+                showToast(errorMessage, 'error');
+                voiceRecording.classList.add('hidden');
+            };
+            
+            try { recognition.start(); } 
+            catch (e) { showToast('Could not start voice recognition.', 'error'); }
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast show ${type}`;
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html>
