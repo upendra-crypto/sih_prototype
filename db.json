@@ -1,0 +1,33 @@
+{
+  "patients": [
+    {
+      "id": 1,
+      "name": "Lakshmi Devi",
+      "age": 26,
+      "gender": "Female",
+      "phone": "9876543210",
+      "village": "Rampur",
+      "programs": ["ANC"]
+    },
+    {
+      "id": 2,
+      "name": "Sunita Singh",
+      "age": 28,
+      "gender": "Female",
+      "phone": "9876543211",
+      "village": "Rampur",
+      "programs": ["Child Health"]
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "type": "ANC Checkup",
+      "patient": "Lakshmi Devi",
+      "village": "Rampur",
+      "due": "Today",
+      "status": "pending",
+      "badge": "🤰"
+    }
+  ]
+}
